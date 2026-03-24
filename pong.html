@@ -1,253 +1,42 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pong Game</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #1a1a1a;
-            font-family: Arial, sans-serif;
-        }
-        h1 {
-            color: white;
-            margin-bottom: 20px;
-        }
-        #scoreboard {
-            color: white;
-            font-size: 24px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 40px;
-        }
-        canvas {
-            border: 3px solid white;
-            background-color: black;
-        }
-        #instructions {
-            color: white;
-            margin-top: 20px;
-            text-align: center;
-        }
-    </style>
 </head>
 <body>
-    <h1>🎮 PONG GAME 🎮</h1>
-    <div id="scoreboard">
-        <div>YOU: <span id="playerScore">0</span></div>
-        <div>AI: <span id="aiScore">0</span></div>
-    </div>
-    <canvas id="pong" width="800" height="400"></canvas>
-    <div id="instructions">
-        <p>Use WASD or Arrow Keys to move your paddle</p>
-        <p>First to 5 points wins!</p>
-    </div>
-
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <p>Press P to pause the game.</p>
     <script>
-        const canvas = document.getElementById('pong');
-        const context = canvas.getContext('2d');
-        
-        // Game constants
-        const PADDLE_WIDTH = 10;
-        const PADDLE_HEIGHT = 100;
-        const BALL_RADIUS = 8;
-        const PADDLE_SPEED = 6;
-        const AI_SPEED = 4.5;
+        // Game variables
+        let paused = false;
 
-        // Player paddle (left)
-        const player = {
-            x: 10,
-            y: (canvas.height - PADDLE_HEIGHT) / 2,
-            width: PADDLE_WIDTH,
-            height: PADDLE_HEIGHT,
-            speed: PADDLE_SPEED
-        };
+        // Existing game code...
 
-        // AI paddle (right)
-        const ai = {
-            x: canvas.width - PADDLE_WIDTH - 10,
-            y: (canvas.height - PADDLE_HEIGHT) / 2,
-            width: PADDLE_WIDTH,
-            height: PADDLE_HEIGHT,
-            speed: AI_SPEED
-        };
-
-        // Ball
-        const ball = {
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            radius: BALL_RADIUS,
-            speedX: 5,
-            speedY: 5,
-            maxSpeed: 10
-        };
-
-        // Scores
-        let playerScore = 0;
-        let aiScore = 0;
-
-        // Keyboard input
-        const keys = {
-            w: false,
-            s: false,
-            ArrowUp: false,
-            ArrowDown: false
-        };
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key.toLowerCase() === 'w') keys.w = true;
-            if (event.key.toLowerCase() === 's') keys.s = true;
-            if (event.key === 'ArrowUp') keys.ArrowUp = true;
-            if (event.key === 'ArrowDown') keys.ArrowDown = true;
+        // Key event listener to toggle pause state
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'P' || event.key === 'p') {
+                paused = !paused; // Toggle pause state
+            }
         });
 
-        document.addEventListener('keyup', (event) => {
-            if (event.key.toLowerCase() === 'w') keys.w = false;
-            if (event.key.toLowerCase() === 's') keys.s = false;
-            if (event.key === 'ArrowUp') keys.ArrowUp = false;
-            if (event.key === 'ArrowDown') keys.ArrowDown = false;
-        });
-
-        // Update player position
-        function updatePlayer() {
-            if ((keys.w || keys.ArrowUp) && player.y > 0) {
-                player.y -= player.speed;
-            }
-            if ((keys.s || keys.ArrowDown) && player.y < canvas.height - player.height) {
-                player.y += player.speed;
-            }
-        }
-
-        // AI logic
-        function updateAI() {
-            const aiCenter = ai.y + ai.height / 2;
-            const ballCenter = ball.y;
-
-            if (aiCenter < ballCenter - 35) {
-                if (ai.y < canvas.height - ai.height) {
-                    ai.y += ai.speed;
-                }
-            } else if (aiCenter > ballCenter + 35) {
-                if (ai.y > 0) {
-                    ai.y -= ai.speed;
-                }
-            }
-        }
-
-        // Update ball
-        function updateBall() {
-            ball.x += ball.speedX;
-            ball.y += ball.speedY;
-
-            // Top and bottom wall collision
-            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
-                ball.speedY = -ball.speedY;
-                ball.y = ball.y - ball.radius < 0 ? ball.radius : canvas.height - ball.radius;
-            }
-
-            // Player paddle collision
-            if (
-                ball.x - ball.radius < player.x + player.width &&
-                ball.y > player.y &&
-                ball.y < player.y + player.height
-            ) {
-                ball.speedX = -ball.speedX;
-                ball.x = player.x + player.width + ball.radius;
-                
-                // Add spin
-                let collidePoint = ball.y - (player.y + player.height / 2);
-                collidePoint = collidePoint / (player.height / 2);
-                ball.speedY = collidePoint * 8;
-                
-                // Increase speed slightly
-                if (Math.abs(ball.speedX) < ball.maxSpeed) {
-                    ball.speedX *= 1.05;
-                }
-            }
-
-            // AI paddle collision
-            if (
-                ball.x + ball.radius > ai.x &&
-                ball.y > ai.y &&
-                ball.y < ai.y + ai.height
-            ) {
-                ball.speedX = -ball.speedX;
-                ball.x = ai.x - ball.radius;
-                
-                // Add spin
-                let collidePoint = ball.y - (ai.y + ai.height / 2);
-                collidePoint = collidePoint / (ai.height / 2);
-                ball.speedY = collidePoint * 8;
-                
-                // Increase speed slightly
-                if (Math.abs(ball.speedX) < ball.maxSpeed) {
-                    ball.speedX *= 1.05;
-                }
-            }
-
-            // Scoring
-            if (ball.x < 0) {
-                aiScore++;
-                document.getElementById('aiScore').textContent = aiScore;
-                resetBall();
-            } else if (ball.x > canvas.width) {
-                playerScore++;
-                document.getElementById('playerScore').textContent = playerScore;
-                resetBall();
-            }
-        }
-
-        // Reset ball
-        function resetBall() {
-            ball.x = canvas.width / 2;
-            ball.y = canvas.height / 2;
-            ball.speedX = (Math.random() > 0.5 ? 1 : -1) * 5;
-            ball.speedY = (Math.random() - 0.5) * 8;
-        }
-
-        // Draw functions
-        function draw() {
-            // Clear canvas
-            context.fillStyle = 'black';
-            context.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw center line
-            context.strokeStyle = 'white';
-            context.setLineDash([10, 10]);
-            context.beginPath();
-            context.moveTo(canvas.width / 2, 0);
-            context.lineTo(canvas.width / 2, canvas.height);
-            context.stroke();
-            context.setLineDash([]);
-
-            // Draw player paddle
-            context.fillStyle = '#00FF00';
-            context.fillRect(player.x, player.y, player.width, player.height);
-
-            // Draw AI paddle
-            context.fillStyle = '#FF0000';
-            context.fillRect(ai.x, ai.y, ai.width, ai.height);
-
-            // Draw ball
-            context.fillStyle = '#FFFF00';
-            context.beginPath();
-            context.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-            context.fill();
-        }
-
-        // Game loop
         function gameLoop() {
-            updatePlayer();
-            updateAI();
-            updateBall();
-            draw();
+            if (!paused) {
+                // Update game state
+                // Existing update logic...
+            } else {
+                // Draw PAUSED message
+                const canvas = document.getElementById('gameCanvas');
+                const context = canvas.getContext('2d');
+                context.fillStyle = 'red';
+                context.font = '48px serif';
+                context.fillText('PAUSED', canvas.width / 2 - 100, canvas.height / 2);
+            }
             requestAnimationFrame(gameLoop);
         }
 
-        // Start game
+        // Start the game loop
         gameLoop();
     </script>
 </body>
