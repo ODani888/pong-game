@@ -1,0 +1,81 @@
+<html>
+<head>
+    <title>Pong Game</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="pong" width="800" height="400"></canvas>
+    <script>
+        const canvas = document.getElementById('pong');
+        const context = canvas.getContext('2d');
+        const pongWidth = 10;
+        const pongHeight = 100;
+        let playerY = (canvas.height - pongHeight) / 2;
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height / 2;
+        let ballSpeedX = 5;
+        let ballSpeedY = 2;
+
+        function draw() {
+            // Clear the canvas
+            context.clearRect(0, 0, canvas.width, canvas.height);
+             
+            // Draw the player paddle
+            context.fillStyle = 'blue';
+            context.fillRect(0, playerY, pongWidth, pongHeight);
+
+            // Draw the ball
+            context.fillStyle = 'red';
+            context.beginPath();
+            context.arc(ballX, ballY, 10, 0, Math.PI * 2);
+            context.fill();
+        }
+
+        function update() {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Ball bouncing off top and bottom walls
+            if (ballY <= 0 || ballY >= canvas.height) {
+                ballSpeedY = -ballSpeedY;
+            }
+             
+            // Ball reset if it goes off the left side
+            if (ballX <= 0) {
+                ballX = canvas.width / 2;
+                ballY = canvas.height / 2;
+            }
+        }
+
+        function gameLoop() {
+            draw();
+            update();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('mousemove', (event) => {
+            const mouseY = event.clientY - canvas.getBoundingClientRect().top;
+            playerY = mouseY - pongHeight / 2;
+        });
+
+        document.addEventListener('keydown', (event) => {
+            switch(event.key) {
+                case 'ArrowUp':
+                case 'w':
+                    if (playerY > 0) playerY -= 20;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                    if (playerY < canvas.height - pongHeight) playerY += 20;
+                    break;
+            }
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
