@@ -4,39 +4,140 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pong Game</title>
+    <style>
+        canvas {
+            background: black;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
-    <p>Press P to pause the game.</p>
+    <canvas id="pong" width="800" height="400"></canvas>
     <script>
-        // Game variables
-        let paused = false;
+        const canvas = document.getElementById('pong');
+        const ctx = canvas.getContext('2d');
 
-        // Existing game code...
+        // Create the pong paddle
+        const paddleWidth = 10, paddleHeight = 100;
+        const player = {
+            x: 0,
+            y: canvas.height / 2 - paddleHeight / 2,
+            width: paddleWidth,
+            height: paddleHeight,
+            color: 'white',
+            score: 0,
+        };
 
-        // Key event listener to toggle pause state
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'P' || event.key === 'p') {
-                paused = !paused; // Toggle pause state
+        const ai = {
+            x: canvas.width - paddleWidth,
+            y: canvas.height / 2 - paddleHeight / 2,
+            width: paddleWidth,
+            height: paddleHeight,
+            color: 'white',
+            score: 0,
+        };
+
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 10,
+            speed: 4,
+            dx: 4,
+            dy: 4,
+        };
+
+        // Draw everything
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Draw paddles
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.fillStyle = ai.color;
+            ctx.fillRect(ai.x, ai.y, ai.width, ai.height);
+            // Draw ball
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2, false);
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Move the paddle
+        function movePaddle(e) {
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (player.y > 0) player.y -= 20;
+                    break;
+                case 'ArrowDown':
+                    if (player.y < canvas.height - player.height) player.y += 20;
+                    break;
+                case 'p':
+                    pauseGame();
+                    break;
             }
-        });
+        }
 
+        // Update game
+        function update() {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Ball collision with top & bottom
+            if (ball.y + ball.radius > canvas.height || ball.y - ball.radius < 0) {
+                ball.dy *= -1;
+            }
+
+            // Ball collision with paddles
+            if (ball.x - ball.radius < player.x + player.width &&
+                ball.y > player.y &&
+                ball.y < player.y + player.height) {
+                ball.dx *= -1;
+            }
+            if (ball.x + ball.radius > ai.x &&
+                ball.y > ai.y &&
+                ball.y < ai.y + ai.height) {
+                ball.dx *= -1;
+            }
+
+            // AI Movement
+            ai.y += ((ball.y - (ai.y + ai.height / 2)) * 0.1);
+
+            // Score update
+            if (ball.x - ball.radius < 0) {
+                ai.score++;
+                resetBall();
+            }
+            if (ball.x + ball.radius > canvas.width) {
+                player.score++;
+                resetBall();
+            }
+        }
+
+        // Pause game
+        let isPaused = false;
+        function pauseGame() {
+            isPaused = !isPaused;
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = 4 * (Math.random() > 0.5 ? 1 : -1);
+            ball.dy = 4 * (Math.random() > 0.5 ? 1 : -1);
+        }
+
+        // Game loop
         function gameLoop() {
-            if (!paused) {
-                // Update game state
-                // Existing update logic...
-            } else {
-                // Draw PAUSED message
-                const canvas = document.getElementById('gameCanvas');
-                const context = canvas.getContext('2d');
-                context.fillStyle = 'red';
-                context.font = '48px serif';
-                context.fillText('PAUSED', canvas.width / 2 - 100, canvas.height / 2);
+            if (!isPaused) {
+                update();
+                draw();
             }
             requestAnimationFrame(gameLoop);
         }
 
-        // Start the game loop
+        document.addEventListener('keydown', movePaddle);
         gameLoop();
     </script>
 </body>
